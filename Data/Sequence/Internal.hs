@@ -1031,7 +1031,7 @@ instance Traversable Digit where
     traverse f (One a) = One <$> f a
     traverse f (Two a b) = liftA2 Two (f a) (f b)
     traverse f (Three a b c) = liftA3 Three (f a) (f b) (f c)
-    traverse f (Four a b c d) = liftA3 Four (f a) (f b) (f c) <*> f d
+    traverse f (Four a b c d) = liftA3 (\a b c d -> Four a b c d) (f a) (f b) (f c) <*> f d
 
 instance NFData a => NFData (Digit a) where
     rnf (One a) = rnf a
@@ -1883,7 +1883,7 @@ index (Seq xs) i
   -- See note on unsigned arithmetic in splitAt
   | fromIntegral i < (fromIntegral (size xs) :: Word) = case lookupTree i xs of
                 Place _ (Elem x) -> x
-  | otherwise   = 
+  | otherwise   =
       error $ "index out of bounds in call to: Data.Sequence.index " ++ show i
 
 -- | \( O(\log(\min(i,n-i))) \). The element at the specified position,
@@ -2163,7 +2163,7 @@ adjustDigit f i (Four a b c d)
 insertAt :: Int -> a -> Seq a -> Seq a
 insertAt i a s@(Seq xs)
   | fromIntegral i < (fromIntegral (size xs) :: Word)
-      = Seq (insTree (`seq` InsTwo (Elem a)) i xs)
+      = Seq (insTree (`seq` (\x -> InsTwo (Elem a) x)) i xs)
   | i <= 0 = a <| s
   | otherwise = s |> a
 
@@ -2782,7 +2782,7 @@ traverseWithIndex f' (Seq xs') = Seq <$> traverseWithIndexTreeE (\s (Elem a) -> 
       !sPsa = s + size a
       !sPsab = sPsa + size b
   traverseWithIndexDigit f s (Four a b c d) =
-                          liftA3 Four (f s a) (f sPsa b) (f sPsab c) <*> f sPsabc d
+                          liftA3 (\a b c d -> Four a b c d) (f s a) (f sPsa b) (f sPsab c) <*> f sPsabc d
     where
       !sPsa = s + size a
       !sPsab = sPsa + size b
